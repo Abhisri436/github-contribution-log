@@ -1,5 +1,3 @@
-# github-contribution-log
-
 # Contribution [#]: [Issue Title]
 
 **Contribution Number:** [1 / 2 / 3]  
