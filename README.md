@@ -1,15 +1,17 @@
-# Contribution [#]: [Issue Title]
+# Contribution #1757: More EpochMetric's compute_fn output types
 
-**Contribution Number:** [1 / 2 / 3]  
-**Student:** Potri Abhisri Barama 
-**Issue:** [GitHub issue link]  
-**Status:** [Phase I / Phase II / Phase III / Phase IV] [In Progress / Complete]
+**Contribution Number:** 1  
+**Student:** Potri Abhisri Barama  
+**Issue:** [More EpochMetric's compute_fn output types #1757](https://github.com/pytorch/ignite/issues/1757)  
+**Status:** Phase I Complete
 
 ---
 
 ## Why I Chose This Issue
 
-[1-2 paragraphs explaining why this issue interests you, how it matches your skills/learning goals, what you hope to learn]
+I chose this issue because it connects to my interest in machine learning metrics and model evaluation. `EpochMetric` is used when a metric needs to be computed over an entire epoch, and improving the types of outputs that `compute_fn` can return would make it more flexible for users who are building custom metrics. Since I have worked with Python, PyTorch-style ML workflows, and evaluation metrics in my previous projects, this issue feels connected to my background while still giving me room to learn more about how metrics are implemented inside a real open-source library.
+
+I also like that the issue has a clear goal: support more output types such as tensors, tuples/lists, or mappings of tensors, and improve the error message when an unsupported type is returned. Through this contribution, I hope to get more comfortable reading a larger codebase, writing tests for edge cases, and understanding how an ML library designs clean APIs for users. This feels like a good balance between being realistic for a first contribution and still being technical enough to help me grow.
 
 ---
 
