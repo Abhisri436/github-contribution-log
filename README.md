@@ -3,7 +3,7 @@
 **Contribution Number:** 1  
 **Student:** Potri Abhisri Barama  
 **Issue:** [More EpochMetric's compute_fn output types #1757](https://github.com/pytorch/ignite/issues/1757)  
-**Status:** Phase I Complete
+**Status:** Phase III Complete
 
 ---
 
@@ -205,50 +205,135 @@ The fix will be considered successful if:
 
 ### Unit Tests
 
-- [ ] Test case 1: [Description]
-- [ ] Test case 2: [Description]
-- [ ] Test case 3: [Description]
+* [x] Test case 1: Added a test for scalar `torch.Tensor` output from `EpochMetric.compute_fn`.
+* [x] Test case 2: Added a test for vector `torch.Tensor` output from `EpochMetric.compute_fn`.
+* [x] Test case 3: Added tests for tuple and list outputs containing tensors.
+* [x] Test case 4: Added a test for mapping/dictionary outputs with string keys and tensor values.
+* [x] Test case 5: Added a test that unsupported output types, such as `str`, raise a clear `TypeError`.
 
 ### Integration Tests
 
-- [ ] Integration scenario 1
-- [ ] Integration scenario 2
+* [x] Ran the existing `EpochMetric` distributed integration test in `tests/ignite/metrics/test_epoch_metric.py`.
+* [x] Verified that the local `gloo_cpu` distributed test passes.
+* [ ] Full multi-rank distributed behavior was not locally tested because the local distributed fixture runs with `WORLD_SIZE=1`. I handled this conservatively by avoiding unverified recursive distributed container broadcasting.
 
 ### Manual Testing
 
-[What you tested manually and results]
+I validated the implementation locally by running the targeted `EpochMetric` test file and style checks.
+
+Commands run:
+
+```bash
+pytest tests/ignite/metrics/test_epoch_metric.py -vv
+ruff check ignite/metrics/epoch_metric.py tests/ignite/metrics/test_epoch_metric.py
+ruff format --check ignite/metrics/epoch_metric.py tests/ignite/metrics/test_epoch_metric.py
+```
+
+Results:
+
+```text
+13 passed, 25 skipped
+All checks passed!
+2 files already formatted
+```
+
+I also reviewed the final diff using:
+
+```bash
+git status
+git log --oneline upstream/master..HEAD
+git diff --stat upstream/master...HEAD
+git diff --name-only upstream/master...HEAD
+git diff --check upstream/master...HEAD
+```
+
+The final diff only modifies files relevant to issue #1757:
+
+```text
+ignite/metrics/epoch_metric.py
+tests/ignite/metrics/test_epoch_metric.py
+```
 
 ---
 
 ## Implementation Notes
 
-### Week [X] Progress
+### Phase III Progress
 
-[What you built this week, challenges faced, decisions made]
+For Phase III, I implemented support for more flexible `EpochMetric.compute_fn` output types. Previously, `EpochMetric` was typed and documented as returning a scalar, and unsupported outputs such as strings were not clearly rejected in the local single-process path. My implementation expands the supported output types and adds validation so the behavior is clearer and more reliable.
 
-### Week [Y] Progress
+### What I Built
 
-[Continue documenting as you work]
+I updated `EpochMetric` so `compute_fn` can support:
+
+* `int` and `float` scalar outputs
+* `torch.Tensor` outputs, including scalar tensors and vector tensors
+* tuple/list outputs containing supported values
+* mapping/dictionary outputs with string keys and supported values
+
+I also added recursive output validation through a helper method so unsupported output types raise a clear `TypeError`.
+
+For distributed mode, I used a conservative approach. Scalar and tensor results can still be broadcast. Tuple/list/mapping outputs are supported in non-distributed mode, but in `world_size > 1`, they raise a clear `NotImplementedError` instead of attempting unverified recursive distributed container broadcasting. To avoid possible distributed hangs, I added a status-code decision before broadcasting so all ranks follow the same path.
+
+### Challenges Faced
+
+One challenge was that some flexible outputs, such as tensors, tuples, lists, and dictionaries, already appeared to work in the local single-process path because the result was passed through without validation. However, the code, type hints, documentation, and distributed path were still scalar-focused. This made the issue less obvious than a simple failing test.
+
+Another challenge was the distributed implementation. The local test environment did not fully exercise `world_size > 1`, so I had to be careful not to introduce untested distributed behavior. I first considered supporting recursive container broadcasting, but decided that was riskier. I solved this by adding a conservative status-code guard so all ranks make the same decision before broadcasting or raising an error.
+
+A third challenge was discovering an overlapping open PR for the same issue after I had already selected issue #1757 and started my implementation work. Instead of treating this as unrelated, I reviewed the overlap and used it to think more carefully about how my contribution could still be useful. My tests check actual output values, not only output types or shapes, which makes them useful for validating the expected behavior.
+
+Tools that helped:
+
+* `pytest` for running the targeted test file
+* `ruff` for linting and formatting checks
+* `git diff`, `git status`, and `git log` for self-review
+* Claude Code for local implementation assistance and diff review
+* ChatGPT for planning, review, and open-source contribution strategy
 
 ### Code Changes
 
-- **Files modified:** [List]
-- **Key commits:** [Links to important commits]
-- **Approach decisions:** [Why you chose certain approaches]
+* **Files modified:**
+
+  * `ignite/metrics/epoch_metric.py`
+  * `tests/ignite/metrics/test_epoch_metric.py`
+
+* **Key commits:**
+
+  * [`56345826`](https://github.com/Abhisri436/ignite/commit/56345826) — Add EpochMetric output type tests
+  * [`65508dd4`](https://github.com/Abhisri436/ignite/commit/65508dd4) — Support flexible EpochMetric compute outputs
+
+* **Approach decisions:**
+
+  * I added tests before changing the implementation so the expected behavior was clearly defined.
+  * I validated scalar tensor, vector tensor, tuple/list, mapping, and unsupported output behavior.
+  * I used a conservative distributed approach because full multi-rank distributed behavior was not locally testable.
+  * I avoided unrelated files and kept the final diff focused on the metric implementation and its tests.
+
+* **Branch link:**
+
+  * https://github.com/Abhisri436/ignite/tree/fix-issue-1757
 
 ---
 
 ## Pull Request
 
-**PR Link:** [GitHub PR URL when submitted]
+**PR Link:** Not submitted yet.
 
-**PR Description:** [Draft or final PR description - much of the content above can be adapted]
+**PR Description:**
+
+This PR addresses issue #1757 by extending `EpochMetric.compute_fn` output support beyond scalar values. It adds validation for supported output types including scalars, tensors, sequences, and mappings. Unsupported output types now raise a clear `TypeError`.
+
+The implementation also updates the `EpochMetric` docstring and adds tests covering scalar tensor, vector tensor, tuple/list tensor outputs, mapping outputs, and unsupported output behavior.
+
+For distributed mode, this PR uses a conservative approach: scalar and tensor outputs can be broadcast, while tuple/list/mapping outputs raise a clear `NotImplementedError` in `world_size > 1` instead of attempting unverified recursive distributed container broadcasting.
 
 **Maintainer Feedback:**
-- [Date]: [Summary of feedback received]
-- [Date]: [How you addressed it]
 
-**Status:** [Awaiting review / Iterating / Approved / Merged]
+* No maintainer feedback received yet.
+* After independently selecting and starting issue #1757, I discovered overlapping PR #3789 and commented there to coordinate and avoid unnecessary duplicate work.
+
+**Status:** Phase III Complete locally; README updated; PR decision pending.
 
 ---
 
@@ -256,20 +341,31 @@ The fix will be considered successful if:
 
 ### Technical Skills Gained
 
-[What you learned technically]
+Through this phase, I learned more about how metrics are implemented in a real machine learning library. I practiced reading existing source code, identifying where type assumptions were built into the implementation, and adding tests that check actual computed values.
+
+I also learned more about distributed code safety. Even a small change to a distributed broadcast path can cause problems if different ranks execute different collective calls. This helped me understand why distributed behavior needs careful reasoning and CI coverage.
 
 ### Challenges Overcome
 
-[What was hard and how you solved it]
+The hardest part was deciding how much distributed support to implement. I wanted to solve the issue, but I also did not want to add risky behavior that I could not test locally. I handled this by keeping the implementation conservative and documenting the limitation clearly.
+
+I also had to handle the open-source coordination challenge of an overlapping PR. Since I had already started the issue before discovering the overlap, I continued documenting my own work while also commenting on the existing PR to avoid unnecessary duplicate effort.
 
 ### What I'd Do Differently Next Time
 
-[Reflection on your process]
+Next time, I would check for overlapping PRs earlier before starting implementation. I would also look more closely at the repository's distributed testing setup at the beginning so I could plan around what can and cannot be tested locally.
 
 ---
 
 ## Resources Used
 
-- [Link to helpful documentation]
-- [Tutorial or Stack Overflow post that helped]
-- [GitHub issues or discussions that helped]
+* PyTorch Ignite issue #1757: https://github.com/pytorch/ignite/issues/1757
+* Overlapping PR #3789: https://github.com/pytorch/ignite/pull/3789
+* My working branch: https://github.com/Abhisri436/ignite/tree/fix-issue-1757
+* Existing `EpochMetric` tests in `tests/ignite/metrics/test_epoch_metric.py`
+* Existing distributed broadcast patterns in Ignite metrics
+* PyTorch Ignite contribution files and test suite
+* `pytest`
+* `ruff`
+
+---
