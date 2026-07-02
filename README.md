@@ -6,10 +6,11 @@
 **My Branch:** [https://github.com/Abhisri436/ignite/tree/fix-issue-1757](https://github.com/Abhisri436/ignite/tree/fix-issue-1757)
 
 **Key Commits:**
+
 - [77759941 - Add EpochMetric output type tests](https://github.com/Abhisri436/ignite/commit/77759941)
 - [00e92338 - Support flexible EpochMetric compute outputs](https://github.com/Abhisri436/ignite/commit/00e92338)
 
-**Status:** Phase III Complete
+**Status:** Phase IV Complete
 
 ---
 
@@ -324,22 +325,29 @@ Tools that helped:
 
 ## Pull Request
 
-**PR Link:** Not submitted yet.
+**PR Link:** Not submitted.
+
+I did not open a duplicate upstream PR because an overlapping active PR already exists for the same issue: [pytorch/ignite#3789](https://github.com/pytorch/ignite/pull/3789). I had already selected issue #1757 and started working on my implementation before discovering that another contributor had also started working on the issue and submitted PR #3789. After commenting there to coordinate, I received feedback that opening a separate external PR for the same change is generally not recommended unless explicitly requested.
+
+**Working Branch:** https://github.com/Abhisri436/ignite/tree/fix-issue-1757
 
 **PR Description:**
 
-This PR addresses issue #1757 by extending `EpochMetric.compute_fn` output support beyond scalar values. It adds validation for supported output types including scalars, tensors, sequences, and mappings. Unsupported output types now raise a clear `TypeError`.
+This contribution addresses issue #1757 by extending `EpochMetric.compute_fn` output support beyond scalar values. It adds validation for supported output types including scalars, tensors, sequences, and mappings, and unsupported output types now raise a clear `TypeError`.
 
 The implementation also updates the `EpochMetric` docstring and adds tests covering scalar tensor, vector tensor, tuple/list tensor outputs, mapping outputs, and unsupported output behavior.
 
-For distributed mode, this PR uses a conservative approach: scalar and tensor outputs can be broadcast, while tuple/list/mapping outputs raise a clear `NotImplementedError` in `world_size > 1` instead of attempting unverified recursive distributed container broadcasting.
+For distributed mode, this contribution uses a conservative approach: scalar and tensor outputs can be broadcast, while tuple/list/mapping outputs raise a clear `NotImplementedError` in `world_size > 1` instead of attempting unverified recursive distributed container broadcasting.
 
 **Maintainer Feedback:**
 
-* No maintainer feedback received yet.
-* After independently selecting and starting issue #1757, I discovered overlapping PR #3789 and commented there to coordinate and avoid unnecessary duplicate work.
+* I independently selected issue #1757 and started my implementation work before discovering overlapping PR #3789.
+* I commented on PR #3789 to coordinate and avoid unnecessary duplicate work.
+* I received feedback that opening a separate external PR for the same change is generally not recommended unless explicitly requested.
+* After that discussion, PR #3789 added value verification tests for tensor, tuple, list, and dict outputs, which aligned with the testing gap I had identified in my own work.
+* Based on this feedback, I did not open a duplicate upstream PR. I am keeping my implementation documented on my working branch for course submission.
 
-**Status:** Phase III Complete locally; README updated; PR decision pending.
+**Status:** Phase IV Complete locally; working branch submitted for course evidence; no duplicate upstream PR opened due to overlapping active PR and feedback not to duplicate the same change.
 
 ---
 
