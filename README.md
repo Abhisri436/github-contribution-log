@@ -3,6 +3,7 @@
 **Contribution Number:** 1  
 **Student:** Potri Abhisri Barama  
 **Issue:** [More EpochMetric's compute_fn output types #1757](https://github.com/pytorch/ignite/issues/1757)  
+**My Branch:** https://github.com/Abhisri436/ignite/tree/fix-issue-1757
 **Status:** Phase III Complete
 
 ---
