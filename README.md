@@ -3,7 +3,11 @@
 **Contribution Number:** 1  
 **Student:** Potri Abhisri Barama  
 **Issue:** [More EpochMetric's compute_fn output types #1757](https://github.com/pytorch/ignite/issues/1757)  
-**My Branch:** https://github.com/Abhisri436/ignite/tree/fix-issue-1757
+**My Branch:** [https://github.com/Abhisri436/ignite/tree/fix-issue-1757](https://github.com/Abhisri436/ignite/tree/fix-issue-1757)
+
+**Key Commits:**
+- [77759941 - Add EpochMetric output type tests](https://github.com/Abhisri436/ignite/commit/77759941)
+- [00e92338 - Support flexible EpochMetric compute outputs](https://github.com/Abhisri436/ignite/commit/00e92338)
 **Status:** Phase III Complete
 
 ---
