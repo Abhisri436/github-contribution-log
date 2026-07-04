@@ -307,9 +307,9 @@ Tools that helped:
 
 * **Key commits:**
 
-  * [`56345826`](https://github.com/Abhisri436/ignite/commit/56345826) — Add EpochMetric output type tests
-  * [`65508dd4`](https://github.com/Abhisri436/ignite/commit/65508dd4) — Support flexible EpochMetric compute outputs
-
+  * [`77759941`](https://github.com/Abhisri436/ignite/commit/77759941) — Add EpochMetric output type tests
+  * [`00e92338`](https://github.com/Abhisri436/ignite/commit/00e92338) — Support flexible EpochMetric compute outputs
+ 
 * **Approach decisions:**
 
   * I added tests before changing the implementation so the expected behavior was clearly defined.
@@ -373,7 +373,7 @@ Next time, I would look more closely at the repository's distributed testing set
 * Existing `EpochMetric` tests in `tests/ignite/metrics/test_epoch_metric.py`
 * Existing distributed broadcast patterns in Ignite metrics
 * PyTorch Ignite contribution files and test suite
-* * My PR #3802: https://github.com/pytorch/ignite/pull/3802
+* My PR #3802: https://github.com/pytorch/ignite/pull/3802
 * `pytest`
 * `ruff`
 
