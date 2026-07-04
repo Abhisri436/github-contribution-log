@@ -9,6 +9,7 @@
 
   * [`77759941`](https://github.com/Abhisri436/ignite/commit/77759941) — Add EpochMetric output type tests
   * [`00e92338`](https://github.com/Abhisri436/ignite/commit/00e92338) — Support flexible EpochMetric compute outputs
+  * [`fcaef4cf`](https://github.com/Abhisri436/ignite/commit/fcaef4cf) — Add distributed EpochMetric output tests
 
 **Status:** Phase IV Complete — PR submitted, awaiting review
 
@@ -217,21 +218,31 @@ The fix will be considered successful if:
 * [x] Test case 3: Added tests for tuple and list outputs containing tensors.
 * [x] Test case 4: Added a test for mapping/dictionary outputs with string keys and tensor values.
 * [x] Test case 5: Added a test that unsupported output types, such as `str`, raise a clear `TypeError`.
+* [x] Test case 6: Added a test that nested containers containing unsupported values raise `TypeError`.
+* [x] Test case 7: Added a test that mappings with non-string keys raise `TypeError`.
 
 ### Integration Tests
 
 * [x] Ran the existing `EpochMetric` distributed integration test in `tests/ignite/metrics/test_epoch_metric.py`.
-* [x] Verified that the local `gloo_cpu` distributed test passes.
-* [ ] Full multi-rank distributed behavior was not locally tested because the local distributed fixture runs with `WORLD_SIZE=1`. I handled this conservatively by avoiding unverified recursive distributed container broadcasting.
+* [x] Verified the new distributed behavior under a real `WORLD_SIZE=2` configuration using the `gloo` backend on CPU.
+* [x] Verified that non-scalar tensor outputs are broadcast successfully and are identical across ranks.
+* [x] Verified that tuple/list/mapping outputs raise `NotImplementedError` consistently on all ranks instead of entering mismatched collective calls.
+* [x] Verified that unsupported output types such as `str` raise `TypeError` consistently on all ranks.
+* [ ] Multi-rank behavior was not tested with GPU/NCCL or with more than two ranks.
 
 ### Manual Testing
 
-I validated the implementation locally by running the targeted `EpochMetric` test file and style checks.
+I validated the implementation locally by running the targeted `EpochMetric` test file, real multi-rank distributed tests, and style checks.
 
 Commands run:
 
 ```bash
 pytest tests/ignite/metrics/test_epoch_metric.py -vv
+
+WORLD_SIZE=2 CUDA_VISIBLE_DEVICES="" pytest --dist=each --tx "2*popen//python=python" \
+  tests/ignite/metrics/test_epoch_metric.py -m distributed \
+  -k "test_distrib_output and gloo_cpu" -q
+
 ruff check ignite/metrics/epoch_metric.py tests/ignite/metrics/test_epoch_metric.py
 ruff format --check ignite/metrics/epoch_metric.py tests/ignite/metrics/test_epoch_metric.py
 ```
@@ -239,9 +250,10 @@ ruff format --check ignite/metrics/epoch_metric.py tests/ignite/metrics/test_epo
 Results:
 
 ```text
-13 passed, 25 skipped
-All checks passed!
-2 files already formatted
+Normal targeted tests: 17 passed, 57 skipped
+WORLD_SIZE=2 distributed tests: 10 passed
+Ruff check: All checks passed!
+Ruff format check: 2 files already formatted
 ```
 
 I also reviewed the final diff using:
@@ -282,6 +294,8 @@ I also added recursive output validation through a helper method so unsupported 
 
 For distributed mode, I used a conservative approach. Scalar and tensor results can still be broadcast. Tuple/list/mapping outputs are supported in non-distributed mode, but in `world_size > 1`, they raise a clear `NotImplementedError` instead of attempting unverified recursive distributed container broadcasting. To avoid possible distributed hangs, I added a status-code decision before broadcasting so all ranks follow the same path.
 
+I later added permanent multi-rank tests and verified the distributed behavior with `WORLD_SIZE=2` using the `gloo` backend on CPU. The tests confirm that non-scalar tensor outputs broadcast consistently across ranks, while container outputs and unsupported types fail symmetrically without leaving ranks in mismatched collective calls.
+
 ### Challenges Faced
 
 One challenge was that some flexible outputs, such as tensors, tuples, lists, and dictionaries, already appeared to work in the local single-process path because the result was passed through without validation. However, the code, type hints, documentation, and distributed path were still scalar-focused. This made the issue less obvious than a simple failing test.
@@ -309,12 +323,13 @@ Tools that helped:
 
   * [`77759941`](https://github.com/Abhisri436/ignite/commit/77759941) — Add EpochMetric output type tests
   * [`00e92338`](https://github.com/Abhisri436/ignite/commit/00e92338) — Support flexible EpochMetric compute outputs
+  * [`fcaef4cf`](https://github.com/Abhisri436/ignite/commit/fcaef4cf) — Add distributed EpochMetric output tests
  
 * **Approach decisions:**
 
   * I added tests before changing the implementation so the expected behavior was clearly defined.
   * I validated scalar tensor, vector tensor, tuple/list, mapping, and unsupported output behavior.
-  * I used a conservative distributed approach because full multi-rank distributed behavior was not locally testable.
+  * I initially used a conservative distributed approach because full multi-rank behavior had not yet been tested locally. I later verified the implementation with `WORLD_SIZE=2` using the `gloo` backend and added permanent distributed regression tests.
   * I avoided unrelated files and kept the final diff focused on the metric implementation and its tests.
 
 * **Branch link:**
@@ -333,7 +348,9 @@ Tools that helped:
 
 This PR addresses issue #1757 by extending `EpochMetric.compute_fn` output support beyond scalar values. It adds validation for supported output types including scalars, tensors, sequences, and mappings, and unsupported output types now raise a clear `TypeError`.
 
-The implementation also updates the `EpochMetric` docstring and adds tests covering scalar tensor, vector tensor, tuple/list tensor outputs, mapping outputs, and unsupported output behavior. For distributed mode, this PR uses a conservative approach: scalar and tensor outputs can be broadcast, while tuple/list/mapping outputs raise a clear `NotImplementedError` in `world_size > 1` instead of attempting unverified recursive distributed container broadcasting.
+The implementation also updates the `EpochMetric` docstring and adds tests covering scalar tensor, vector tensor, tuple/list tensor outputs, mapping outputs, and unsupported output behavior. For distributed mode, this PR uses a conservative approach: scalar and tensor outputs can be broadcast, while tuple/list/mapping outputs raise a clear `NotImplementedError` in `world_size > 1` instead of attempting unverified recursive distributed container broadcasting. 
+
+The PR also includes multi-rank distributed tests that verify non-scalar tensor outputs are consistent across ranks and that unsupported container/type outputs fail symmetrically.
 
 **Maintainer Feedback:**
 
