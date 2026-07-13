@@ -1,9 +1,9 @@
 # Contribution [#]: [Issue Title]
 
 **Contribution Number:** 2   
-**Student:** Potri Abhisri Barama 
-**Issue:** [GitHub issue link]  
-**Status:** [Phase I / Phase II / Phase III / Phase IV] [In Progress / Complete]
+**Student:** Potri Abhisri Barama  
+**Issue:** TBD  
+**Status:** Phase I — Issue Selection In Progress
 
 ---
 
