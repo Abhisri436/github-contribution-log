@@ -2,7 +2,6 @@
 
 **Contribution Number:** 2   
 **Student:** Potri Abhisri Barama  
-**Project:** PyTorch AO  
 **Fork:** https://github.com/Abhisri436/ao  
 **Issue:** https://github.com/pytorch/ao/issues/955  
 **Status:** Phase I Complete — Phase II In Progress
@@ -11,7 +10,9 @@
 
 ## Why I Chose This Issue
 
-[1-2 paragraphs explaining why this issue interests you, how it matches your skills/learning goals, what you hope to learn]
+I chose this issue because it connects to my interest in PyTorch, machine learning systems, and optimizer behavior. After working on PyTorch Ignite for my first open-source contribution, I wanted my second contribution to stay within the PyTorch ecosystem while focusing on a practical issue that affects how ML tooling works across different hardware backends.
+
+This issue is meaningful because torchao’s low-bit optimizers rely on `torch.compile`, but the optimizer path currently does not expose the `backend` argument. This limits flexibility for users on platforms such as MPS, where the default backend may not be supported. I also liked that the issue is not just a documentation change, but still seems manageable because the main compile call appears to be centralized in `torchao/optim/adam.py`, and the fix can likely be tested by verifying that a custom backend argument is forwarded correctly.
 
 ---
 
