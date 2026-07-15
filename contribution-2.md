@@ -2,8 +2,10 @@
 
 **Contribution Number:** 2   
 **Student:** Potri Abhisri Barama  
-**Issue:** TBD  
-**Status:** Phase I — Issue Selection In Progress
+**Project:** PyTorch AO  
+**Fork:** https://github.com/Abhisri436/ao  
+**Issue:** https://github.com/pytorch/ao/issues/955  
+**Status:** Phase I Complete — Phase II In Progress
 
 ---
 
