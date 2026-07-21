@@ -352,12 +352,19 @@ The implementation also updates the `EpochMetric` docstring and adds tests cover
 
 The PR also includes multi-rank distributed tests that verify non-scalar tensor outputs are consistent across ranks and that unsupported container/type outputs fail symmetrically.
 
-**Maintainer Feedback:**
+**Maintainer Feedback Log:**
 
-* I opened PR #3802 for issue #1757 after completing my local implementation and final checks.
-* I had already selected issue #1757 and started my implementation before discovering overlapping PR #3789.
-* I mentioned the overlapping PR in my PR description and noted that I am happy to close, adjust, or consolidate my PR if maintainers prefer.
-* Current PR status: no direct review feedback received yet.
+- **2026-06-29:** Implemented the main `EpochMetric` output handling change before receiving maintainer feedback.  
+  - **Response:** Added recursive output validation for supported scalar, tensor, sequence, and mapping outputs, and added clear errors for unsupported output types.  
+  - **Commit ref:** `00e92338` — Support flexible EpochMetric compute outputs
+
+- **2026-07-04:** Added additional distributed regression coverage before maintainer review to strengthen the PR.  
+  - **Response:** Added `WORLD_SIZE=2` distributed tests to verify non-scalar tensor outputs across ranks and symmetric failure behavior for unsupported distributed outputs.  
+  - **Commit ref:** `fcaef4cf` — Add distributed EpochMetric output tests
+
+- **2026-07-20:** No formal maintainer review feedback has been received yet on PR #3802.  
+  - **Response:** Keeping the PR open and monitoring for review. I also disclosed the overlap with PR #3789 in the PR description and noted that I am open to adjust or consolidate if maintainers prefer.  
+  - **Commit ref:** N/A — no maintainer-requested changes yet.
 
 **Status:** Awaiting review
 
