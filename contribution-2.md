@@ -9,6 +9,12 @@
 
 ---
 
+## Problem Summary
+
+torchao’s low-bit Adam optimizers internally rely on `torch.compile`, but they do not currently expose the `backend` argument to users. This matters because some platforms, especially MPS, may not support the default backend well and may need an alternative backend such as `aot_eager`. I chose this issue because it connects to my interest in PyTorch and ML systems while still being scoped enough for a focused open-source contribution.
+
+---
+
 ## Why I Chose This Issue
 
 I chose this issue because it connects to my interest in PyTorch, machine learning systems, and optimizer behavior. After working on PyTorch Ignite for my first open-source contribution, I wanted my second contribution to stay within the PyTorch ecosystem while focusing on a practical issue that affects how ML tooling works across different hardware backends.
