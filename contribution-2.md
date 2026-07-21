@@ -163,6 +163,12 @@ torch.compile(single_param_adam, fullgraph=True, dynamic=False)
 
 All of the public low-bit Adam optimizers use this shared `_AdamBase.step()` path, but their constructors have explicit signatures and do not accept `compile_backend`. Because there is no `**kwargs` passthrough, adding the parameter only to `_AdamBase` would not be enough. The public optimizer constructors also need to accept and forward the argument.
 
+### Investigative Depth
+
+During investigation, I found that `_AdamBase` already stores optimizer configuration values such as `block_size`, `bf16_stochastic_round`, and `is_adamw` in `__init__`, then uses them later in `step()`. This is an analogous pattern for adding `compile_backend`: the value can be accepted by the constructor, stored on the optimizer, and used later when calling `torch.compile`.
+
+I also considered edge cases for preserving backward compatibility. If `compile_backend` is not provided, the optimizer should not pass a `backend` argument to `torch.compile`, so existing users continue getting the same default behavior. If a backend is provided, the value should be forwarded exactly to `torch.compile`.
+
 ### Proposed Solution
 
 I plan to add an optional `compile_backend` parameter to the low-bit Adam optimizers. The value will be stored on `_AdamBase` and passed into `torch.compile` only when it is provided.
