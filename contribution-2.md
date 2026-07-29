@@ -5,7 +5,7 @@
 **Fork:** https://github.com/Abhisri436/ao  
 **Issue:** https://github.com/pytorch/ao/issues/955  
 **My Branch:** https://github.com/Abhisri436/ao/tree/fix-issue-955-compile-backend  
-**Status:** Phase II Complete
+**Status:** Phase III Complete
 
 ---
 
@@ -19,7 +19,7 @@ torchao’s low-bit Adam optimizers internally rely on `torch.compile`, but they
 
 I chose this issue because it connects to my interest in PyTorch, machine learning systems, and optimizer behavior. After working on PyTorch Ignite for my first open-source contribution, I wanted my second contribution to stay within the PyTorch ecosystem while focusing on a practical issue that affects how ML tooling works across different hardware backends.
 
-This issue is meaningful because torchao’s low-bit optimizers rely on `torch.compile`, but the optimizer path currently does not expose the `backend` argument. This limits flexibility for users on platforms such as MPS, where the default backend may not be supported. I also liked that the issue is not just a documentation change, but still seems manageable because the main compile call appears to be centralized in `torchao/optim/adam.py`, and the fix can likely be tested by verifying that a custom backend argument is forwarded correctly.
+This issue is meaningful because torchao’s low-bit optimizers rely on `torch.compile`, but the optimizer path currently does not expose the `backend` argument. This limits flexibility for users on platforms such as MPS, where the default backend may not be supported. I also liked that the issue is not just a documentation change, but still seems manageable because the main compile call appears to be centralized in `torchao/optim/adam.py`, and the fix can be tested by verifying that a custom backend argument is forwarded correctly.
 
 ---
 
@@ -70,9 +70,13 @@ The relevant code path is `_AdamBase.step()`, which is shared by the low-bit Ada
 - `AdamFp8`
 - `AdamWFp8`
 
-The tests will likely be added in:
+The tests were added in:
 
 - `test/test_low_bit_optim.py`
+
+Documentation was updated in:
+
+- `torchao/optim/README.md`
 
 ---
 
@@ -167,19 +171,19 @@ The root cause is that the low-bit Adam optimizer path hard-codes the internal `
 torch.compile(single_param_adam, fullgraph=True, dynamic=False)
 ```
 
-All of the public low-bit Adam optimizers use this shared `_AdamBase.step()` path, but their constructors have explicit signatures and do not accept `compile_backend`. Because there is no `**kwargs` passthrough, adding the parameter only to `_AdamBase` would not be enough. The public optimizer constructors also need to accept and forward the argument.
+All of the public low-bit Adam optimizers use this shared `_AdamBase.step()` path, but their constructors have explicit signatures and do not accept `compile_backend`. Because there is no `**kwargs` passthrough, adding the parameter only to `_AdamBase` would not be enough. The public optimizer constructors also needed to accept and forward the argument.
 
 ### Investigative Depth
 
-During investigation, I found that `_AdamBase` already stores optimizer configuration values such as `block_size`, `bf16_stochastic_round`, and `is_adamw` in `__init__`, then uses them later in `step()`. This is an analogous pattern for adding `compile_backend`: the value can be accepted by the constructor, stored on the optimizer, and used later when calling `torch.compile`.
+During investigation, I found that `_AdamBase` already stores optimizer configuration values such as `block_size`, `bf16_stochastic_round`, and `is_adamw` in `__init__`, then uses them later in `step()`. This was an analogous pattern for adding `compile_backend`: the value could be accepted by the constructor, stored on the optimizer, and used later when calling `torch.compile`.
 
 I also considered edge cases for preserving backward compatibility. If `compile_backend` is not provided, the optimizer should not pass a `backend` argument to `torch.compile`, so existing users continue getting the same default behavior. If a backend is provided, the value should be forwarded exactly to `torch.compile`.
 
-### Proposed Solution
+### Implemented Solution
 
-I plan to add an optional `compile_backend` parameter to the low-bit Adam optimizers. The value will be stored on `_AdamBase` and passed into `torch.compile` only when it is provided.
+I added an optional `compile_backend` parameter to the low-bit Adam optimizers. The value is stored on `_AdamBase` and passed into `torch.compile` only when it is provided.
 
-When `compile_backend` is not set, the optimizer should preserve the current behavior exactly by calling `torch.compile` without a `backend` argument.
+When `compile_backend` is not set, the optimizer preserves the current behavior exactly by calling `torch.compile` without a `backend` argument.
 
 ### Implementation Plan
 
@@ -187,7 +191,7 @@ Using UMPIRE framework:
 
 **Understand:** torchao’s low-bit Adam optimizers call `torch.compile` internally, but users cannot choose the backend. This prevents users on platforms such as MPS from passing a backend like `aot_eager`.
 
-**Match:** The optimizer already stores configuration values such as `block_size`, `bf16_stochastic_round`, and `is_adamw` in `_AdamBase.__init__`, then uses them later in `step()`. I can follow this same pattern for `compile_backend`.
+**Match:** The optimizer already stores configuration values such as `block_size`, `bf16_stochastic_round`, and `is_adamw` in `_AdamBase.__init__`, then uses them later in `step()`. I followed this same pattern for `compile_backend`.
 
 **Plan:**
 
@@ -204,20 +208,20 @@ Using UMPIRE framework:
 5. Forward `compile_backend=compile_backend` to `super().__init__`.
 6. Update `_AdamBase.step()` so it passes `backend=self.compile_backend` to `torch.compile` only when `compile_backend` is not `None`.
 7. Add tests in `test/test_low_bit_optim.py`.
-8. Optionally update `torchao/optim/README.md` to document the new argument.
+8. Update `torchao/optim/README.md` to document the new argument.
 
-**Implement:** Work will happen on this branch:
+**Implement:** Work happened on this branch:
 
 https://github.com/Abhisri436/ao/tree/fix-issue-955-compile-backend
 
-**Review:** I will keep the diff focused and follow the project’s contribution expectations: add tests for code changes, keep formatting/linting clean with Ruff, and update documentation if the public API changes.
+**Review:** I kept the diff focused and followed the project’s contribution expectations: added tests for code changes, kept formatting/linting clean with Ruff, and updated documentation because this is a public API change.
 
-**Evaluate:** I will verify the fix by adding tests that check:
+**Evaluate:** I verified the fix by adding tests that check:
 
 - `compile_backend="aot_eager"` is accepted by the optimizer constructors.
 - The backend argument is forwarded to `torch.compile`.
 - The default behavior is preserved when `compile_backend` is not set.
-- Existing low-bit optimizer smoke tests still pass.
+- Existing low-bit optimizer tests still pass.
 
 MPS hardware is not required for these tests because the missing behavior is an API-forwarding issue that can be verified on CPU.
 
@@ -227,28 +231,51 @@ MPS hardware is not required for these tests because the missing behavior is an 
 
 ### Unit Tests
 
-- [ ] Test that low-bit Adam optimizer constructors accept `compile_backend="aot_eager"`.
-- [ ] Test that `compile_backend` is forwarded to `torch.compile` as the `backend` argument.
-- [ ] Test that when `compile_backend` is not provided, no `backend` argument is passed and current default behavior is preserved.
+For Phase III, I added targeted tests in `test/test_low_bit_optim.py` for the new `compile_backend` behavior.
 
-### Integration Tests
+The tests verify that:
 
-- [ ] Run existing low-bit optimizer smoke tests.
-- [ ] Run targeted optimizer tests in `test/test_low_bit_optim.py`.
+- [x] Low-bit Adam optimizer constructors accept `compile_backend="aot_eager"`.
+- [x] `compile_backend` is forwarded to `torch.compile` as the `backend` argument.
+- [x] When `compile_backend` is not provided, no `backend` argument is passed and the current default behavior is preserved.
+
+### Integration / Regression Tests
+
+I also ran the existing low-bit optimizer tests to confirm that the change did not break current behavior.
 
 ### Manual Testing
 
-I verified the development environment by running:
+I ran the following validation commands locally:
 
 ```bash
-python -m pytest test/test_low_bit_optim.py -k smoke -q
+ruff check --isolated --select F821,F823,W191
+ruff check torchao/optim/adam.py test/test_low_bit_optim.py
+ruff format --check torchao/optim/adam.py test/test_low_bit_optim.py
+python -m pytest test/test_low_bit_optim.py -q
+```
+
+Results:
+
+```text
+ruff check --isolated --select F821,F823,W191 → All checks passed
+ruff check torchao/optim/adam.py test/test_low_bit_optim.py → All checks passed
+ruff format --check torchao/optim/adam.py test/test_low_bit_optim.py → 2 files already formatted
+python -m pytest test/test_low_bit_optim.py -q → 44 passed, 10 skipped, 17 warnings
+```
+
+I also ran the targeted compile backend and smoke tests:
+
+```bash
+python -m pytest test/test_low_bit_optim.py -k "compile_backend or smoke" -q
 ```
 
 Result:
 
 ```text
-12 passed, 34 deselected, 17 warnings in 135.95s
+20 passed, 34 deselected, 17 warnings
 ```
+
+The warnings were existing PyTorch deprecation/cache warnings and did not block the test runs.
 
 ---
 
@@ -260,25 +287,59 @@ For Week 6, I selected PyTorch AO issue #955 for my second open-source contribut
 
 I also completed the local setup and reproduction process. The main setup challenge was that my first Python virtual environment installed `torch 2.2.2`, which was too old for the current `torchao` main branch on my Intel Mac. I resolved this by using Miniforge and creating a Conda environment with a newer PyTorch version from conda-forge.
 
+### Phase III Progress
+
+During Phase III, I implemented the fix for PyTorch AO issue #955 in small, testable increments.
+
+I added an optional `compile_backend` argument to the low-bit Adam optimizer path in `torchao/optim/adam.py`. The value is stored on `_AdamBase` and forwarded to `torch.compile` as the `backend` argument only when provided. When `compile_backend` is not set, the optimizer preserves the existing default behavior by calling `torch.compile` without a `backend` argument.
+
+I also added targeted tests in `test/test_low_bit_optim.py` to verify constructor support, backend forwarding, and preserved default behavior. Finally, I updated `torchao/optim/README.md` with a short usage note documenting the new argument.
+
 ### Code Changes
 
-- **Files modified:** None yet
-- **Key commits:** TBD
-- **Approach decisions:** I plan to keep the fix small and backward-compatible by only passing the `backend` argument to `torch.compile` when `compile_backend` is explicitly provided.
+- **Files modified:**
+  - `torchao/optim/adam.py`
+  - `test/test_low_bit_optim.py`
+  - `torchao/optim/README.md`
+
+- **Key commits:**
+  - `74abedde7` — optim: expose compile backend in low-bit Adam optimizers
+  - `8a3a11743` — test: cover compile backend for low-bit Adam optimizers
+  - `c5b9ef216` — docs: document compile backend for low-bit optimizers
+
+- **Working branch:** https://github.com/Abhisri436/ao/tree/fix-issue-955-compile-backend
+
+### Approach Decisions
+
+I kept the change additive and backward-compatible. The new `compile_backend` argument defaults to `None`, and the implementation only passes `backend` to `torch.compile` when the user explicitly provides a value. This preserves the existing default behavior for current users.
+
+I also implemented the work in three small increments: source change, tests, and documentation. Each increment was committed separately with a focused commit message.
+
+### Self-Review
+
+Before moving to Phase IV, I reviewed the branch against `upstream/main`. The final diff only includes three relevant files:
+
+- `torchao/optim/adam.py`
+- `test/test_low_bit_optim.py`
+- `torchao/optim/README.md`
+
+The commit history is clean, the changes are focused, and the implementation is additive and backward-compatible.
 
 ---
 
 ## Pull Request
 
-**PR Link:** TBD
+**PR Link:** TBD — to be submitted in Phase IV
+
+**Working Branch:** https://github.com/Abhisri436/ao/tree/fix-issue-955-compile-backend
 
 **PR Description:** TBD
 
 **Maintainer Feedback:**
 
-- TBD
+- No formal maintainer feedback yet.
 
-**Status:** Not submitted yet
+**Status:** Branch ready for Phase IV PR submission
 
 ---
 
@@ -288,13 +349,19 @@ I also completed the local setup and reproduction process. The main setup challe
 
 I learned more about how torchao’s low-bit optimizers use `torch.compile` internally and how optimizer constructor arguments flow into shared base-class behavior. I also learned how environment setup can depend heavily on hardware architecture, since my Intel Mac could not install a new enough PyTorch version through a standard pip-based virtual environment.
 
+During Phase III, I also gained practice making a small API change in a larger ML systems codebase. I learned how to preserve backward compatibility by only passing optional arguments when they are explicitly provided, and how to test API-forwarding behavior by patching `torch.compile` instead of requiring a real MPS device.
+
 ### Challenges Overcome
 
 The biggest challenge in Phase II was environment setup. My first setup failed because the available PyTorch version for my Intel Mac was too old for the current torchao main branch. I resolved this by installing Miniforge, creating a Conda environment, and verifying that the newer PyTorch version could import the required torchao optimizer components.
 
+During Phase III, the main challenge was keeping the change small while still covering all public optimizer constructors. The actual compile call lives in `_AdamBase.step()`, but the public optimizer classes have explicit constructor signatures, so I needed to add and forward `compile_backend` through all relevant low-bit Adam and AdamW classes. I solved this by following the existing pattern used for optimizer configuration values like `block_size`, `bf16_stochastic_round`, and `is_adamw`.
+
 ### What I'd Do Differently Next Time
 
 Next time, I would check the project’s PyTorch version expectations and my local hardware compatibility earlier, especially for projects in the PyTorch ecosystem that may depend on newer internal APIs.
+
+I would also continue using small, focused commits because it made the implementation easier to review and helped me verify each piece before moving on.
 
 ---
 
