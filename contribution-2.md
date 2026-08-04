@@ -363,12 +363,19 @@ The commit history is clean, the changes are focused, and the implementation is 
 
 I contributed support for an optional `compile_backend` argument in torchao’s low-bit Adam optimizers. This allows users to pass a backend such as `"aot_eager"` to the internal `torch.compile` call while preserving the existing default behavior when no backend is provided.
 
-**Maintainer Feedback:**
+**Maintainer Feedback Log:**
 
-- No formal code review feedback has been received yet.
-- GitHub automatically requested reviews from the relevant code owners after the PR was opened.
-- The Meta CLA check was initially pending, but I signed the CLA and the check was approved.
-- Current status is awaiting maintainer review.
+- **2026-08-04:** Opened PR #4686 against `pytorch/ao:main` from my fork branch `fix-issue-955-compile-backend`.  
+  - **Response:** GitHub automatically requested reviews from the relevant code owners. I also confirmed the PR was linked to issue #955 using `Closes #955`.  
+  - **Commit refs:** `667519935`, `b65280372`, `2e924c887`
+
+- **2026-08-04:** Meta CLA check was initially pending after the PR was opened.  
+  - **Response:** I signed the Meta CLA, and the CLA check was approved.  
+  - **Commit refs:** N/A — no code changes required.
+
+- **2026-08-04:** No formal maintainer code review feedback has been received yet.  
+  - **Response:** PR is open and awaiting review. I will respond to reviewer comments if changes are requested.  
+  - **Commit refs:** N/A — no maintainer-requested changes yet.
 
 **Status:** PR submitted and awaiting review
 
