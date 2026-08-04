@@ -5,7 +5,8 @@
 **Fork:** https://github.com/Abhisri436/ao  
 **Issue:** https://github.com/pytorch/ao/issues/955  
 **My Branch:** https://github.com/Abhisri436/ao/tree/fix-issue-955-compile-backend  
-**Status:** Phase III Complete
+**Pull Request:** https://github.com/pytorch/ao/pull/4686  
+**Status:** Phase IV Complete — PR submitted, awaiting review
 
 ---
 
@@ -277,6 +278,20 @@ Result:
 
 The warnings were existing PyTorch deprecation/cache warnings and did not block the test runs.
 
+### Final Pre-Submission Checks
+
+Before opening the PR, I rebased my branch on the latest `upstream/main` and reran the relevant checks.
+
+Final validation results:
+
+```text
+ruff check --isolated --select F821,F823,W191 → All checks passed
+ruff check torchao/optim/adam.py test/test_low_bit_optim.py → All checks passed
+ruff format --check torchao/optim/adam.py test/test_low_bit_optim.py → 2 files already formatted
+python -m pytest test/test_low_bit_optim.py -k "compile_backend or smoke" -q → 20 passed, 34 deselected
+python -m pytest test/test_low_bit_optim.py -q → 44 passed, 10 skipped
+```
+
 ---
 
 ## Implementation Notes
@@ -295,6 +310,16 @@ I added an optional `compile_backend` argument to the low-bit Adam optimizer pat
 
 I also added targeted tests in `test/test_low_bit_optim.py` to verify constructor support, backend forwarding, and preserved default behavior. Finally, I updated `torchao/optim/README.md` with a short usage note documenting the new argument.
 
+### Phase IV Progress
+
+During Phase IV, I completed final pre-submission checks before opening the pull request. I rebased my branch on the latest `upstream/main`, and because the rebase changed my commit hashes, I force-pushed safely using `--force-with-lease`.
+
+I opened PR #4686 against `pytorch/ao:main` from my fork branch `fix-issue-955-compile-backend`. GitHub automatically requested reviews from the relevant code owners. The Meta CLA check was initially pending, but I signed the CLA and the check was approved.
+
+I also posted the required Phase IV completion message in Slack.
+
+Current status: PR submitted and awaiting maintainer review.
+
 ### Code Changes
 
 - **Files modified:**
@@ -303,11 +328,12 @@ I also added targeted tests in `test/test_low_bit_optim.py` to verify constructo
   - `torchao/optim/README.md`
 
 - **Key commits:**
-  - `74abedde7` — optim: expose compile backend in low-bit Adam optimizers
-  - `8a3a11743` — test: cover compile backend for low-bit Adam optimizers
-  - `c5b9ef216` — docs: document compile backend for low-bit optimizers
+  - `667519935` — optim: expose compile backend in low-bit Adam optimizers
+  - `b65280372` — test: cover compile backend for low-bit Adam optimizers
+  - `2e924c887` — docs: document compile backend for low-bit optimizers
 
 - **Working branch:** https://github.com/Abhisri436/ao/tree/fix-issue-955-compile-backend
+- **Pull request:** https://github.com/pytorch/ao/pull/4686
 
 ### Approach Decisions
 
@@ -329,17 +355,22 @@ The commit history is clean, the changes are focused, and the implementation is 
 
 ## Pull Request
 
-**PR Link:** TBD — to be submitted in Phase IV
+**PR Link:** https://github.com/pytorch/ao/pull/4686
 
 **Working Branch:** https://github.com/Abhisri436/ao/tree/fix-issue-955-compile-backend
 
-**PR Description:** TBD
+**PR Description:**
+
+I contributed support for an optional `compile_backend` argument in torchao’s low-bit Adam optimizers. This allows users to pass a backend such as `"aot_eager"` to the internal `torch.compile` call while preserving the existing default behavior when no backend is provided.
 
 **Maintainer Feedback:**
 
-- No formal maintainer feedback yet.
+- No formal code review feedback has been received yet.
+- GitHub automatically requested reviews from the relevant code owners after the PR was opened.
+- The Meta CLA check was initially pending, but I signed the CLA and the check was approved.
+- Current status is awaiting maintainer review.
 
-**Status:** Branch ready for Phase IV PR submission
+**Status:** PR submitted and awaiting review
 
 ---
 
@@ -351,11 +382,15 @@ I learned more about how torchao’s low-bit optimizers use `torch.compile` inte
 
 During Phase III, I also gained practice making a small API change in a larger ML systems codebase. I learned how to preserve backward compatibility by only passing optional arguments when they are explicitly provided, and how to test API-forwarding behavior by patching `torch.compile` instead of requiring a real MPS device.
 
+During Phase IV, I learned how to prepare an open-source pull request for review by rebasing on the latest upstream branch, force-pushing safely with `--force-with-lease`, writing a clear PR description, handling the CLA check, and checking that code owner reviews were requested.
+
 ### Challenges Overcome
 
 The biggest challenge in Phase II was environment setup. My first setup failed because the available PyTorch version for my Intel Mac was too old for the current torchao main branch. I resolved this by installing Miniforge, creating a Conda environment, and verifying that the newer PyTorch version could import the required torchao optimizer components.
 
 During Phase III, the main challenge was keeping the change small while still covering all public optimizer constructors. The actual compile call lives in `_AdamBase.step()`, but the public optimizer classes have explicit constructor signatures, so I needed to add and forward `compile_backend` through all relevant low-bit Adam and AdamW classes. I solved this by following the existing pattern used for optimizer configuration values like `block_size`, `bf16_stochastic_round`, and `is_adamw`.
+
+During Phase IV, the main challenge was making sure the branch was ready for public review. The upstream branch had advanced, so I rebased my branch on the latest `upstream/main` and used `--force-with-lease` to safely update my fork after the rebase changed my commit hashes.
 
 ### What I'd Do Differently Next Time
 
@@ -368,6 +403,7 @@ I would also continue using small, focused commits because it made the implement
 ## Resources Used
 
 - Issue #955: https://github.com/pytorch/ao/issues/955
+- Pull Request #4686: https://github.com/pytorch/ao/pull/4686
 - PyTorch AO repository: https://github.com/pytorch/ao
 - PyTorch AO contributing guide: https://github.com/pytorch/ao/blob/main/CONTRIBUTING.md
 - PyTorch AO optimizer source: `torchao/optim/adam.py`
