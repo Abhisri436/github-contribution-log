@@ -373,11 +373,11 @@ I contributed support for an optional `compile_backend` argument in torchao’s 
   - **Response:** I signed the Meta CLA, and the CLA check was approved.  
   - **Commit refs:** N/A — no code changes required.
 
-- **2026-08-04:** No formal maintainer code review feedback has been received yet.  
-  - **Response:** PR is open and awaiting review. I will respond to reviewer comments if changes are requested.  
-  - **Commit refs:** N/A — no maintainer-requested changes yet.
+- **2026-08-12:** Reviewer clarified that the current PR may not fully resolve issue #955 because `aot_eager` is mainly for debugging and does not codegen fused kernels.  
+  - **Response:** I documented the feedback and will wait for further maintainer direction before making additional changes.  
+  - **Commit refs:** N/A — no code changes made after this feedback yet.
 
-**Status:** PR submitted and awaiting review
+**Status:** PR submitted; maintainer feedback received; awaiting next steps
 
 ---
 
